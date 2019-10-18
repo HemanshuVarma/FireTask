@@ -23,6 +23,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    dataBinding {
+        enabled = true
+    }
 }
 
 dependencies {
@@ -34,6 +37,9 @@ dependencies {
 
     //Lottie
     implementation "com.airbnb.android:lottie:$lottie_version"
+
+    //Material Support
+    implementation "com.google.android.material:material:$material_version"
 
     //Firebase SDK
     implementation "com.google.firebase:firebase-analytics:$analytics_version"
