@@ -6,6 +6,8 @@ apply plugin: 'kotlin-android-extensions'
 
 apply plugin: 'com.google.gms.google-services'
 
+apply plugin: 'kotlin-kapt'
+
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
@@ -45,6 +47,9 @@ dependencies {
     implementation "com.google.firebase:firebase-analytics:$analytics_version"
     implementation "com.firebaseui:firebase-ui-auth:$auth_ui_version"
     implementation "com.google.firebase:firebase-auth:$auth_version"
+
+    //Lifecycle
+    implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'

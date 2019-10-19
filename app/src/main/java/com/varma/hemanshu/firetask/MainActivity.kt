@@ -1,7 +1,6 @@
 package com.varma.hemanshu.firetask
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -14,6 +13,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.ViewModelProviders
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
@@ -21,16 +21,19 @@ import com.varma.hemanshu.firetask.databinding.ActivityMainBinding
 
 
 private const val RC_SIGN_IN = 1
-private lateinit var binding: ActivityMainBinding
-
 var networkConnected: Boolean = false
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var viewModel: FireTaskViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        //Getting ViewModel ref.
+        viewModel = ViewModelProviders.of(this).get(FireTaskViewModel::class.java)
         checkNetwork()
     }
 
@@ -117,9 +120,8 @@ class MainActivity : AppCompatActivity() {
                 if (response == null) {
                     Toast.makeText(applicationContext, "Sign-in Cancelled", Toast.LENGTH_SHORT)
                         .show()
-                    showExitDialog()
-                    //Exiting App
-//                    finishAffinity()
+                    //Exit App
+                    finishAffinity()
                 } else {
                     Toast.makeText(
                         applicationContext,
@@ -144,10 +146,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
         val menuItem = menu?.findItem(R.id.signOut)
-        if (!networkConnected) {
-            menuItem?.isVisible = false
-        } else
-            menuItem?.isVisible = true
+        menuItem?.isVisible = networkConnected
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -166,15 +165,5 @@ class MainActivity : AppCompatActivity() {
         AuthUI.getInstance()
             .signOut(this)
             .addOnCompleteListener { checkNetwork() }
-    }
-
-    //Exit Dialog shown before exiting App
-    private fun showExitDialog() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(R.string.exit_title)
-        builder.setMessage(R.string.exit_message)
-        builder.setPositiveButton(android.R.string.yes) { _, _ -> finishAffinity() }
-        builder.setNegativeButton(android.R.string.no) { _, _ -> Unit }
-        builder.show()
     }
 }
