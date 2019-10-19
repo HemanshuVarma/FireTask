@@ -18,22 +18,33 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
 import com.varma.hemanshu.firetask.databinding.ActivityMainBinding
-
-
-private const val RC_SIGN_IN = 1
-var networkConnected: Boolean = false
+import com.varma.hemanshu.firetask.viewmodels.FireTaskViewModel
+import com.varma.hemanshu.firetask.viewmodels.FireTaskViewModelFactory
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: FireTaskViewModel
 
+    private var networkConnected: Boolean = false
+
+    companion object {
+        private const val RC_SIGN_IN = 1
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding.lifecycleOwner = this
 
+        //Getting application(context) which is then passed to factoryViewModel
+        //factoryViewModel will initialize viewModel with context
+        //This is to prevent Memory leaks
+        val application = requireNotNull(this).application
+        val viewModelFactory = FireTaskViewModelFactory(application)
         //Getting ViewModel ref.
-        viewModel = ViewModelProviders.of(this).get(FireTaskViewModel::class.java)
+        viewModel = ViewModelProviders.of(this, viewModelFactory).get(FireTaskViewModel::class.java)
+
         checkNetwork()
     }
 
@@ -46,6 +57,7 @@ class MainActivity : AppCompatActivity() {
 
         val cm =
             applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
+        //Check for Internet if block for Android version Marshmallow otherwise else block for below version
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             cm?.run {
                 cm.getNetworkCapabilities(cm.activeNetwork)?.run {
@@ -82,8 +94,6 @@ class MainActivity : AppCompatActivity() {
             AuthUI.IdpConfig.EmailBuilder().build(),
             AuthUI.IdpConfig.GoogleBuilder().build()
         )
-
-        // Create and launch sign-in intent
         startActivityForResult(
             AuthUI.getInstance()
                 .createSignInIntentBuilder()
@@ -103,30 +113,21 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == RC_SIGN_IN) {
             val response = IdpResponse.fromResultIntent(data)
-
             if (resultCode == Activity.RESULT_OK) {
                 // Successfully signed in
                 val user = FirebaseAuth.getInstance().currentUser
-                Toast.makeText(
-                    applicationContext,
-                    "Sign In Success ${user?.displayName}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                // ...
+                Toast.makeText(this, "Sign In Success ${user?.displayName}", Toast.LENGTH_SHORT)
+                    .show()
             } else {
-                // Sign in failed. If response is null the user canceled the
-                // sign-in flow using the back button. Otherwise check
-                // response.getError().getErrorCode() and handle the error.
+                //Sign in failed due to back button pressed. Exit the App
                 if (response == null) {
-                    Toast.makeText(applicationContext, "Sign-in Cancelled", Toast.LENGTH_SHORT)
-                        .show()
-                    //Exit App
+                    Toast.makeText(this, "Sign-in Cancelled", Toast.LENGTH_SHORT).show()
                     finishAffinity()
-                } else {
+                }
+                // Some error from client/server
+                else {
                     Toast.makeText(
-                        applicationContext,
-                        "Error : ${response.error?.errorCode}",
-                        Toast.LENGTH_SHORT
+                        this, "Error : ${response.error?.errorCode}", Toast.LENGTH_SHORT
                     ).show()
                 }
             }
@@ -160,10 +161,12 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    // Called to signOut a user account
+    //called to sign out a user from App
     private fun signOutUser() {
         AuthUI.getInstance()
             .signOut(this)
-            .addOnCompleteListener { checkNetwork() }
+            .addOnCompleteListener {
+                checkNetwork()
+            }
     }
 }
