@@ -9,8 +9,9 @@ buildscript {
         analytics_version = '17.2.0'
         auth_ui_version = '4.3.1'
         auth_version = '19.1.0'
-        material_version= '1.1.0-beta01'
+        material_version = '1.1.0-beta01'
         lifecycle_version = '2.1.0'
+        timber_version = '4.7.1'
     }
     repositories {
         google()
