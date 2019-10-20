@@ -1,47 +1,48 @@
 package com.varma.hemanshu.firetask
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.list_item_layout.view.*
+import com.varma.hemanshu.firetask.databinding.ListItemLayoutBinding
 
-class FireTaskAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-    private var items: List<FireTask> = ArrayList()
+class FireTaskAdapter : ListAdapter<FireTask, FireTaskAdapter.ViewHolder>(FireTaskDiffCallback()) {
 
-    override fun getItemCount(): Int {
-        return items.size
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder.from(parent)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return FireTaskViewHolder(
-            LayoutInflater.from(parent.context)
-                .inflate(R.layout.list_item_layout, parent, false)
-        )
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = getItem(position)
+        holder.bind(item)
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when (holder) {
-            is FireTaskViewHolder -> {
-                holder.bind(items.get(position))
+    class ViewHolder private constructor(val binding: ListItemLayoutBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(item: FireTask) {
+            binding.fireTaskData = item
+            binding.executePendingBindings()
+        }
+
+        companion object {
+            fun from(parent: ViewGroup): ViewHolder {
+                val layoutInflater = LayoutInflater.from(parent.context)
+                val binding = ListItemLayoutBinding.inflate(layoutInflater, parent, false)
+
+                return ViewHolder(binding)
             }
         }
     }
+}
 
-    fun submitList(fireTaskList: List<FireTask>) {
-        items = fireTaskList
+class FireTaskDiffCallback : DiffUtil.ItemCallback<FireTask>() {
+    override fun areItemsTheSame(oldItem: FireTask, newItem: FireTask): Boolean {
+        return oldItem.uuid == newItem.uuid
     }
 
-    class FireTaskViewHolder constructor(
-        itemView: View
-    ) : RecyclerView.ViewHolder(itemView) {
-        val userMessage = itemView.item_message
-        val userName = itemView.item_user_name
-
-        fun bind(fireTask: FireTask) {
-            userMessage.text = fireTask.message
-            userName.text = fireTask.username
-        }
+    override fun areContentsTheSame(oldItem: FireTask, newItem: FireTask): Boolean {
+        return oldItem == newItem
     }
-
 }

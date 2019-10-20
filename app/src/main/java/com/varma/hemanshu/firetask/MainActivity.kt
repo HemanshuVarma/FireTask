@@ -1,5 +1,6 @@
 package com.varma.hemanshu.firetask
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
@@ -10,6 +11,10 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.firebase.ui.auth.AuthUI
+import com.firebase.ui.auth.IdpResponse
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import com.varma.hemanshu.firetask.databinding.ActivityMainBinding
 import com.varma.hemanshu.firetask.viewmodels.FireTaskViewModel
 import com.varma.hemanshu.firetask.viewmodels.FireTaskViewModelFactory
@@ -19,7 +24,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: FireTaskViewModel
-    private lateinit var adapterFireTask: FireTaskAdapter
+
+    //Firebase instances
+    private lateinit var mFirebaseDatabase: FirebaseDatabase
+    private lateinit var mFirebaseAuth: FirebaseAuth
+    private lateinit var mDatabaseReference: DatabaseReference
 
     companion object {
         private const val RC_SIGN_IN = 1
@@ -40,8 +49,22 @@ class MainActivity : AppCompatActivity() {
         //Linking ViewModel with created Ref.
         binding.fireTaskViewModel = viewModel
 
-        initRecyclerView()
-        addDataSet()
+        //Initializing Firebase Components
+        mFirebaseDatabase = FirebaseDatabase.getInstance()
+        mFirebaseAuth = FirebaseAuth.getInstance()
+        mDatabaseReference = mFirebaseDatabase.reference
+
+        //data source to pass into Adapter
+        val data = ArrayList<FireTask>()
+
+        //Adapter ref.
+        val adapter = FireTaskAdapter()
+
+        //Setting Adapter ref. to RecyclerView
+        binding.messagesList.adapter = adapter
+
+        //passing the data into adapter
+        adapter.submitList(data)
 
         viewModel.showLogin.observe(this, Observer {
             if (it == true) {
@@ -55,43 +78,9 @@ class MainActivity : AppCompatActivity() {
                 viewModel.showOfflineComplete()
             }
         })
-        viewModel.backPressed.observe(this, Observer {
-            if (it == true) {
-                exitApp()
-                viewModel.backPressedComplete()
-            }
-        })
-        viewModel.errorWhileLogin.observe(this, Observer {
-            if (it == true) {
-                showErrorDetails()
-                viewModel.errorWhileLoginComplete()
-            }
-        })
 
         viewModel.textWatcher(binding)
-    }
-
-    private fun addDataSet() {
-        val data = DataSource.createDataSet()
-        adapterFireTask.submitList(data)
-    }
-
-    private fun initRecyclerView() {
-        binding.messagesList.apply {
-            adapterFireTask = FireTaskAdapter()
-            adapter = adapterFireTask
-        }
-    }
-
-
-    private fun showErrorDetails() {
-        Toast.makeText(this, getString(R.string.error_firebase), Toast.LENGTH_SHORT).show()
-
-    }
-
-    private fun exitApp() {
-        Toast.makeText(this, getString(R.string.sing_in_cancelled), Toast.LENGTH_SHORT).show()
-        finishAffinity()
+        binding.sendButton.setOnClickListener { sendData() }
     }
 
     //Method invoked only when connected to internet
@@ -105,6 +94,7 @@ class MainActivity : AppCompatActivity() {
             AuthUI.getInstance()
                 .createSignInIntentBuilder()
                 .setAvailableProviders(providers)
+                .setIsSmartLockEnabled(false)
                 .setLogo(R.mipmap.ic_launcher_round)
                 .build(),
             RC_SIGN_IN
@@ -118,7 +108,42 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        viewModel.signInProcess(requestCode, resultCode, data)
+        if (requestCode == RC_SIGN_IN) {
+            val response = IdpResponse.fromResultIntent(data)
+            if (resultCode == Activity.RESULT_OK) {
+                // Successfully signed in
+                val user = mFirebaseAuth.currentUser
+                Toast.makeText(this, "Welcome ${user?.displayName}", Toast.LENGTH_SHORT).show()
+            } else {
+                //Sign in failed due to back pressed or client/server error
+                if (response == null) {
+                    Toast.makeText(this, getString(R.string.sing_in_cancelled), Toast.LENGTH_SHORT)
+                        .show()
+                    Timber.e("Sign-In cancelled by User")
+                    finishAffinity()
+                } else {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.error_firebase),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Timber.e("Error : ${response.error?.errorCode}")
+                }
+            }
+        }
+    }
+
+    private fun sendData() {
+        val userName = mFirebaseAuth.currentUser?.displayName.toString()
+        val messageToStore = binding.messageEditText.text.toString().trim()
+        val uidFirebase = mDatabaseReference.push().key.toString()
+        Toast.makeText(
+            this, "UserName: $userName \n Message: $messageToStore \n UID: $uidFirebase",
+            Toast.LENGTH_SHORT
+        ).show()
+        val firebaseData = FireTask(userName, messageToStore, uidFirebase)
+        binding.messageEditText.text.clear()
+        mDatabaseReference.child(uidFirebase).setValue(firebaseData)
     }
 
     //Menu Inflater
@@ -142,80 +167,23 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.signOut -> {
-                viewModel.signOutUser()
+                signOutUser()
             }
         }
         return true
     }
 
+    //called to sign out a user from App
+    private fun signOutUser() {
+        AuthUI.getInstance()
+            .signOut(this)
+            .addOnCompleteListener {
+                viewModel.checkNetwork(application)
+            }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         Timber.i("onDestroy Called")
-    }
-}
-
-class DataSource {
-
-    companion object {
-        fun createDataSet(): ArrayList<FireTask> {
-            val list = ArrayList<FireTask>()
-            list.add(
-                FireTask(
-                    "Hemanshu Varma",
-                    "This is a sample text message retrieved from firebase realtime databse"
-                )
-            )
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(
-                FireTask(
-                    "Hemanshu",
-                    "This is a sample text message retrieved from firebase realtime databse"
-                )
-            )
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Varma", "Hello sample message from firebase as a sample"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu", "Hello Firebase message"))
-            list.add(
-                FireTask(
-                    "Hemanshu Varma",
-                    "This is a sample text message retrieved from firebase realtime databse"
-                )
-            )
-            list.add(FireTask("Hemanshu", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Varma", "Hello sample message from firebase as a sample"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(
-                FireTask(
-                    "Hemanshu Varma",
-                    "This is a sample text message retrieved from firebase realtime databse"
-                )
-            )
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(
-                FireTask(
-                    "Hemanshu Varma",
-                    "This is a sample text message retrieved from firebase realtime databse"
-                )
-            )
-            list.add(FireTask("Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
-            list.add(FireTask("Hemanshu", "Hello Firebase message"))
-            list.add(FireTask("Varma", "Hello Firebase message"))
-            return list
-        }
     }
 }

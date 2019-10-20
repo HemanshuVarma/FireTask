@@ -1,10 +1,8 @@
 <resources>
     <string name="app_name">FireTask</string>
     <string name="sign_out">Sign Out</string>
-    <string name="exit_title">Confirm Exit</string>
-    <string name="exit_message">Are you sure you want to exit?</string>
     <string name="edit_text_hint">Type a message</string>
     <string name="send">Send</string>
     <string name="error_firebase">Error while connecting to server</string>
-    <string name="sing_in_cancelled">Sign-in Cancelled</string>
+    <string name="sing_in_cancelled">Sign-in Cancelled by User</string>
 </resources>
