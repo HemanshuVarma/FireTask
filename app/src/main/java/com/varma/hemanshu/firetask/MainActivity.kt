@@ -19,6 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: FireTaskViewModel
+    private lateinit var adapterFireTask: FireTaskAdapter
 
     companion object {
         private const val RC_SIGN_IN = 1
@@ -39,6 +40,8 @@ class MainActivity : AppCompatActivity() {
         //Linking ViewModel with created Ref.
         binding.fireTaskViewModel = viewModel
 
+        initRecyclerView()
+        addDataSet()
 
         viewModel.showLogin.observe(this, Observer {
             if (it == true) {
@@ -66,6 +69,18 @@ class MainActivity : AppCompatActivity() {
         })
 
         viewModel.textWatcher(binding)
+    }
+
+    private fun addDataSet() {
+        val data = DataSource.createDataSet()
+        adapterFireTask.submitList(data)
+    }
+
+    private fun initRecyclerView() {
+        binding.messagesList.apply {
+            adapterFireTask = FireTaskAdapter()
+            adapter = adapterFireTask
+        }
     }
 
 
@@ -136,5 +151,71 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Timber.i("onDestroy Called")
+    }
+}
+
+class DataSource {
+
+    companion object {
+        fun createDataSet(): ArrayList<FireTask> {
+            val list = ArrayList<FireTask>()
+            list.add(
+                FireTask(
+                    "Hemanshu Varma",
+                    "This is a sample text message retrieved from firebase realtime databse"
+                )
+            )
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(
+                FireTask(
+                    "Hemanshu",
+                    "This is a sample text message retrieved from firebase realtime databse"
+                )
+            )
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Varma", "Hello sample message from firebase as a sample"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu", "Hello Firebase message"))
+            list.add(
+                FireTask(
+                    "Hemanshu Varma",
+                    "This is a sample text message retrieved from firebase realtime databse"
+                )
+            )
+            list.add(FireTask("Hemanshu", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Varma", "Hello sample message from firebase as a sample"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(
+                FireTask(
+                    "Hemanshu Varma",
+                    "This is a sample text message retrieved from firebase realtime databse"
+                )
+            )
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(
+                FireTask(
+                    "Hemanshu Varma",
+                    "This is a sample text message retrieved from firebase realtime databse"
+                )
+            )
+            list.add(FireTask("Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu Varma", "Hello Firebase message"))
+            list.add(FireTask("Hemanshu", "Hello Firebase message"))
+            list.add(FireTask("Varma", "Hello Firebase message"))
+            return list
+        }
     }
 }
