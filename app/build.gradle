@@ -47,6 +47,7 @@ dependencies {
     implementation "com.google.firebase:firebase-analytics:$analytics_version"
     implementation "com.firebaseui:firebase-ui-auth:$auth_ui_version"
     implementation "com.google.firebase:firebase-auth:$auth_version"
+    implementation "com.google.firebase:firebase-database:$firebase_database_version"
 
     //Lifecycle
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"

@@ -64,7 +64,10 @@ class MainActivity : AppCompatActivity() {
                 viewModel.errorWhileLoginComplete()
             }
         })
+
+        viewModel.textWatcher(binding)
     }
+
 
     private fun showErrorDetails() {
         Toast.makeText(this, getString(R.string.error_firebase), Toast.LENGTH_SHORT).show()

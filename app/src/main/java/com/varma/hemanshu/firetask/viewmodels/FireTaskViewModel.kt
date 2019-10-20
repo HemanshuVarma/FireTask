@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -13,6 +15,8 @@ import androidx.lifecycle.MutableLiveData
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
+import com.varma.hemanshu.firetask.databinding.ActivityMainBinding
+import timber.log.Timber
 
 class FireTaskViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -108,6 +112,19 @@ class FireTaskViewModel(application: Application) : AndroidViewModel(application
             return View.VISIBLE
     }
 
+    fun textWatcher(binding: ActivityMainBinding) {
+        binding.messageEditText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {}
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val messageString = binding.messageEditText.text.toString().trim()
+                binding.sendButton.isEnabled = messageString.isNotEmpty()
+            }
+        })
+    }
+
     //called to sign out a user from App
     fun signOutUser() {
         AuthUI.getInstance()
@@ -115,5 +132,10 @@ class FireTaskViewModel(application: Application) : AndroidViewModel(application
             .addOnCompleteListener {
                 _showLogin.value = true
             }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Timber.i("onCleared Called")
     }
 }
