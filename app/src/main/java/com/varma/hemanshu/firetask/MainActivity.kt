@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: FireTaskViewModel
+    private lateinit var adapter: FireTaskAdapter
 
     //Firebase instances
     private lateinit var mFirebaseDatabase: FirebaseDatabase
@@ -54,17 +55,18 @@ class MainActivity : AppCompatActivity() {
         mFirebaseAuth = FirebaseAuth.getInstance()
         mDatabaseReference = mFirebaseDatabase.reference
 
-        //data source to pass into Adapter
-        val data = ArrayList<FireTask>()
-
         //Adapter ref.
-        val adapter = FireTaskAdapter()
+        adapter = FireTaskAdapter()
 
         //Setting Adapter ref. to RecyclerView
         binding.messagesList.adapter = adapter
 
         //passing the data into adapter
-        adapter.submitList(data)
+        viewModel.database.observe(this, Observer {
+            it?.let {
+                adapter.submitList(it)
+            }
+        })
 
         viewModel.showLogin.observe(this, Observer {
             if (it == true) {

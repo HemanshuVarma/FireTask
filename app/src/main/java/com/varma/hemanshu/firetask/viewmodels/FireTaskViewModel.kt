@@ -10,6 +10,11 @@ import android.view.View
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.varma.hemanshu.firetask.FireTask
 import com.varma.hemanshu.firetask.databinding.ActivityMainBinding
 import timber.log.Timber
 
@@ -24,6 +29,10 @@ class FireTaskViewModel(application: Application) : AndroidViewModel(application
     //LiveData for showing Offline status
     private val _showOffline = MutableLiveData<Boolean>()
     val showOffline: LiveData<Boolean> get() = _showOffline
+
+    //LiveData for data from Firebase
+    private val _database = MutableLiveData<List<FireTask>>()
+    val database: LiveData<List<FireTask>> get() = _database
 
     //Initializing with checking Internet
     init {
@@ -43,6 +52,7 @@ class FireTaskViewModel(application: Application) : AndroidViewModel(application
         if (isConnected) {
             _showLogin.value = true
             showOverflow = true
+            database()
         } else {
             _showOffline.value = true
             showOverflow = false
@@ -82,6 +92,28 @@ class FireTaskViewModel(application: Application) : AndroidViewModel(application
                 binding.sendButton.isEnabled = messageString.isNotEmpty()
             }
         })
+    }
+
+    private val items: MutableList<FireTask> = mutableListOf()
+    fun database() {
+        if (_database.value == null) {
+            FirebaseDatabase.getInstance().reference
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        Timber.e("Loading messages cancelled ${databaseError.toException()}")
+                    }
+
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            items.clear()
+                            dataSnapshot.children.mapNotNullTo(items) {
+                                it.getValue<FireTask>(FireTask::class.java)
+                            }
+                            _database.value = items
+                        }
+                    }
+                })
+        }
     }
 
     override fun onCleared() {
